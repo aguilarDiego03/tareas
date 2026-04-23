@@ -1,37 +1,33 @@
-import bcrypt
-from .databaseModel import Database
+import mysql.connector
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 class UsuarioModel:
     def __init__(self):
-        self.db = Database()
-        
-    def registrar(self,usuario_data):
-        salt=bcrypt.gensalt()
-        hashed_pw= bcrypt.hashpw(usuario_data.password.encode('utf-8'),salt)
-        
-        conn=self.db.get_connection()
-        cursor=conn.cursor()
+        self.conn = mysql.connector.connect(
+            host=os.getenv("DB_HOST"),
+            user=os.getenv("DB_USER"),
+            password=os.getenv("DB_PASSWORD"),
+            database=os.getenv("DB_NAME")
+        )
+        self.cursor = self.conn.cursor()
+
+    def crear_usuario(self, nombre, apellido, email, password):
         try:
-            cursor.execute(
-                "INSERT INTO usuarios (nombre,email,password) VALUES (%s , %s , %s)",
-                (usuario_data.nombre, usuario_data.email, hashed_pw.decode('utf-8'))
-            )
-            conn.commit()
+            query = """
+                INSERT INTO usuario (nombre, apellido, email, password)
+                VALUES (%s, %s, %s, %s)
+            """
+            self.cursor.execute(query, (nombre, apellido, email, password))
+            self.conn.commit()
             return True
-        except Exception as e:
-            print(f"Error: {e}")
+        except mysql.connector.Error as e:
+            print("Error:", e)
             return False
-        finally:
-            conn.close()
-        
-    def validar_login(self,email,password):
-        conn= self.db.get_connection()
-        cursor=conn.cursor(dictionary=True)
-        cursor.execute("SELECT * FROM usuarios WHERE email=%s",(email,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if user and bcrypt.checkpw(password.encode('utf-8'),user['password'].encode('utf-8')):
-            return user
-        return None
-        
+
+    def obtener_usuario(self, email):
+        query = "SELECT * FROM usuario WHERE email = %s"
+        self.cursor.execute(query, (email,))
+        return self.cursor.fetchone()

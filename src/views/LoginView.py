@@ -1,27 +1,64 @@
 import flet as ft
 
-def LoginView(page, auth_controller):
-    email_input = ft.TextField(label="Correo electrónico", width=350, border_radius=10)
-    pass_input = ft.TextField(label="Contraseña", password=True, can_reveal_password=True, width=350, border_radius=10)
+class LoginView(ft.View):
+    def __init__(self, page: ft.Page, controller):
+        super().__init__("/")
+        self.page = page
+        self.controller = controller
 
-    def login_click(e):
-        user, msg = auth_controller.login(email_input.value, pass_input.value)
-        if user:
-            page.session.set("user", user) 
-            page.go("/dashboard")
+        self.nombre = ft.TextField(label="Nombre")
+        self.apellido = ft.TextField(label="Apellido")
+        self.email = ft.TextField(label="Correo")
+        self.password = ft.TextField(label="Contraseña", password=True)
+
+        self.mensaje = ft.Text()
+
+        self.controls = [
+            ft.Column(
+                [
+                    ft.Text("Registro / Login", size=30),
+
+                    self.nombre,
+                    self.apellido,
+                    self.email,
+                    self.password,
+
+                    self.mensaje,
+
+                    ft.Row(
+                        [
+                            ft.ElevatedButton("Iniciar sesión", on_click=self.login),
+                            ft.ElevatedButton("Crear cuenta", on_click=self.crear_cuenta),
+                        ],
+                        alignment=ft.MainAxisAlignment.CENTER
+                    )
+                ],
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER
+            )
+        ]
+
+    def login(self, e):
+        success = self.controller.login(
+            self.email.value,
+            self.password.value
+        )
+
+        if success:
+            self.page.go("/dashboard")
         else:
-            page.snack_bar = ft.SnackBar(ft.Text(msg))
-            page.snack_bar.open = True
-            page.update()
+            self.mensaje.value = "Credenciales incorrectas"
+            self.mensaje.color = "red"
+            self.page.update()
 
-    return ft.View("/", [
-        ft.AppBar(title=ft.Text("SIGE - Login"), bgcolor=ft.Colors.BLUE_GREY_900, color="white"),
-        ft.Column([
-            ft.Icon(ft.Icons.LOCK_PERSON, size=50, color=ft.colors.BLUE),
-            ft.Text("Acceso al Sistema", size=20, weight="bold"),
-            email_input,
-            pass_input,
-            ft.ElevatedButton("Entrar", on_click=login_click, width=350),
-            ft.TextButton("Crear una cuenta nueva", on_click=lambda _: page.go("/registro"))
-        ], horizontal_alignment=ft.CrossAxisAlignment.CENTER, alignment=ft.MainAxisAlignment.CENTER)
-    ])
+    def crear_cuenta(self, e):
+        ok, msg = self.controller.registrar_usuario(
+            self.nombre.value,
+            self.apellido.value,
+            self.email.value,
+            self.password.value
+        )
+
+        self.mensaje.value = msg
+        self.mensaje.color = "green" if ok else "red"
+        self.page.update()

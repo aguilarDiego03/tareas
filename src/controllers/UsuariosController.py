@@ -1,15 +1,37 @@
-from models.UsuarioModel import UsuarioModel 
-from models.schemasModel import UsuarioSchema
-from pydantic import ValidationError
+from models.UsuarioModel import UsuarioModel
+import bcrypt
 
 class AuthController:
     def __init__(self):
         self.model = UsuarioModel()
-        
-    def registrar_usuario(self, nombre, email, password):
-        try:
-            nuevo_usuario=UsuarioSchema(nombre=nombre, email=email,password=password)
-            success=self.model.registrar(nuevo_usuario)
-            return success, "Usuario creado correctamente"
-        except ValidationError as e:
-            return False, e.errors()[0]['msg']
+
+    def registrar_usuario(self, nombre, apellido, email, password):
+        if not nombre or not apellido or not email or not password:
+            return False, "Todos los campos son obligatorios"
+
+        hashed = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+        creado = self.model.crear_usuario(
+            nombre,
+            apellido,
+            email,
+            hashed.decode()
+        )
+
+        if creado:
+            return True, "Cuenta creada correctamente"
+        else:
+            return False, "El correo ya existe"
+
+    def login(self, email, password):
+        usuario = self.model.obtener_usuario(email)
+
+        if not usuario:
+            return False
+
+        stored_password = usuario[4].encode()
+
+        if bcrypt.checkpw(password.encode(), stored_password):
+            return True
+
+        return False
