@@ -12,14 +12,12 @@ def start(page: ft.Page):
         page.views.clear()
 
         if page.route == "/":
-            page.add(ft.Text("Caso 1"))
             page.views.append(LoginView(page, auth_ctrl))
         elif page.route == "/dashboard":
             page.views.append(DashboardView(page, task_ctrl))
-        
-        if not page.views:
+        else:
             page.views.append(
-                ft.View("/", [ft.Text("Error: Ruta no encontrada o vista vacía")])
+                ft.View("/", [ft.Text("Error: Ruta no encontrada")])
             )
 
         page.update()
