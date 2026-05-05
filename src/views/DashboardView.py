@@ -1,8 +1,10 @@
 import flet as ft
 
 class DashboardView(ft.View):
-    def __init__(self, page: ft.Page):
+    def __init__(self, page: ft.Page, task_ctrl):
         super().__init__("/dashboard")
+        self.page = page
+        self.task_ctrl = task_ctrl
 
         self.controls = [
             ft.Column(
